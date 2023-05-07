@@ -1,14 +1,38 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
 const express = require("express");
+const app = express();
 const bcrypt = require("bcrypt");
 const passport = require("passport");
-const passport = require("passport");
-const config=require(./config);
-const app = express();
-
+const flash = require("express-flash");
+const dotenv = require("dotenv");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: false }));
+const config = require("./config");
+config(
+  passport,
+  (email) => users.find((user) => user.email === email),
+  (id) => users.find((user) => user.id === id)
+);
 const users = [];
 app.set("view-engine", "ejs");
 
 app.use(express.urlencoded({ extended: false }));
+
+app.use(flash());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.get("/", (req, res) => {
   res.render("home.ejs", { name: "css6996" });
 });
@@ -36,5 +60,13 @@ app.post("/register", async (req, res) => {
     console.log(users);
   }
 });
-app.post("/login", (req, res) => {});
+
+app.post(
+  "/login",
+  passport.authenticate("local", {
+    successRedirect: "/",
+    failureRedirect: "/login",
+    failureFlash: true,
+  })
+);
 app.listen(3000);
